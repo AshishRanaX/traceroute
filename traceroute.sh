@@ -3,7 +3,7 @@ tgt=$1
 
 
 PING_COUNT=2
-
+TRACE_TRIES=3
 #COMMANDNAME_SWITCHES are used along each COMMANDNAME, this is portability (to test if different switches work on current machine)
 #init_COMMANDNAME_switches will be called at the start of the script and fill COMMANDNAME_SWITCHES
 #these switches are currently assumed to work for ping: -c
@@ -38,8 +38,7 @@ echo [*] $tgt is at $hops hops
 route=$(mktemp)
 
 for i in $(seq 1 $hops);do
-	try=3
-	while [[ $try -gt 0 ]];do
+	while [[ $TRACE_TRIES -gt 0 ]];do
 		echo ''
 		echo -n "hop $i"
 		ping $PING_SWITCHES -c $PING_COUNT -t $i $tgt  > $route
@@ -53,7 +52,7 @@ for i in $(seq 1 $hops);do
 			cat $route  | grep -i "Time to live exceeded" | head -1 | cut -c 5-$postition
 			break
 		fi
-		try=$(expr $try - 1)
+		TRACE_TRIES=$(expr $TRACE_TRIES - 1)
 	done
 	if [[ $try -eq 0 ]];then
 		echo " * * *"
