@@ -15,20 +15,23 @@ else
 	hops=$(expr 64 - $rcv_ttl)
 fi
 echo [*] $tgt is at $hops hops
+
+route=$(mktemp)
+
 for i in $(seq 1 $hops);do
 	try=3
 	while [[ $try -gt 0 ]];do
 		echo ''
 		echo -n "hop $i"
-		ping -c 2 -t $i $tgt  > route
-		if [[ $(cat route | grep -i "bytes from" | wc -l) -gt 0 ]];then
+		ping -c 2 -t $i $tgt  > $route
+		if [[ $(cat $route | grep -i "bytes from" | wc -l) -gt 0 ]];then
 			echo [*] $tgt reached.
 			exit 0
 		fi
-		if [[ $(cat route | grep -i "Time to live exceeded" | wc -l) -gt 1 ]];then
+		if [[ $(cat $route | grep -i "Time to live exceeded" | wc -l) -gt 1 ]];then
 
-			postition=$(cat route | grep -i "Time to live exceeded" |  head -1 | grep -b -o icmp_seq | cut -d : -f 1)
-			cat route  | grep -i "Time to live exceeded" | head -1 | cut -c 5-$postition
+			postition=$(cat $route | grep -i "Time to live exceeded" |  head -1 | grep -b -o icmp_seq | cut -d : -f 1)
+			cat $route  | grep -i "Time to live exceeded" | head -1 | cut -c 5-$postition
 			break
 		fi
 		try=$(expr $try - 1)
@@ -37,4 +40,4 @@ for i in $(seq 1 $hops);do
 		echo " * * *"
 	fi
 done
-rm route
+rm $route
