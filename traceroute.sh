@@ -7,14 +7,16 @@ traceroute\\n\
 Options:\n\
 \t-p PING_OPTION=VALUE,..\tpass arbitrary switches to pings used in the script, seperated by ',' and wrappen in double qoutes '\"'\n\
 \t\treserved switches: (-A, -c) there are other switches to set arbitrary value for -c, -W\n\
+\t-t TRACE_TRIES\tset value of number of tries before giving up on hop\n\
 Usage Examples:\n\
-\t$0 -p \"-t=64,-r\" google.com\tput -t 64 -r before other ping switches
+\t$0 -p \"-t=64,-r\" google.com\tput -t 64 -r before other ping switches\n\
+\t$0 -t 1 google.com\tgive each hop a single try
 "
 
 REDIRECT_DEST="/dev/null"
 
 PING_COUNT=2
-TRACE_TRIES=1
+TRACE_TRIES=3
 
 #COMMANDNAME_SWITCHES are used along each COMMANDNAME, this is portability (to test if different switches work on current machine)
 #init_COMMANDNAME_switches will be called at the start of the script and fill COMMANDNAME_SWITCHES
@@ -27,7 +29,7 @@ ASSUMED_RELIABLE_IP="127.0.0.1"
 
 function handle_args {
 
-		while getopts "hp:c:" name;do
+		while getopts "hp:c:t:" name;do
 					case $name in
 					h)
 							echo -e $HELP
@@ -36,6 +38,8 @@ function handle_args {
 							PING_SWITCHES=$(echo $OPTARG | tr '=' ' ' | tr ',' ' ');;
 					c) 		
 							PING_COUNT=$OPTARG;;
+					t)
+							TRACE_TRIES=$OPTARG;;
 					?)    
 							echo -e $HELP
 							exit 1;;
@@ -94,7 +98,7 @@ for i in $(seq 1 $hops);do
 			echo [*] $TARGET reached.
 			exit 0
 		fi
-		if [[ $(cat $route | grep -i "Time to live exceeded" | wc -l) -gt 1 ]];then
+		if [[ $(cat $route | grep -i "Time to live exceeded" | wc -l) -gt 0 ]];then
 
 			postition=$(cat $route | grep -i "Time to live exceeded" |  head -1 | grep -b -o icmp_seq | cut -d : -f 1)
 			cat $route  | grep -i "Time to live exceeded" | head -1 | cut -c 5-$postition
